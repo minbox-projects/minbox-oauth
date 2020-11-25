@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.provider.client.ClientCredentialsToke
 import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.code.AuthorizationCodeTokenGranter;
 import org.springframework.security.oauth2.provider.code.InMemoryAuthorizationCodeServices;
+import org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator;
 import org.springframework.security.oauth2.provider.implicit.ImplicitTokenGranter;
 import org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter;
 import org.springframework.security.oauth2.provider.refresh.RefreshTokenGranter;
@@ -58,6 +59,13 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
      * Instance of custom authorization provided by ApiBoot
      */
     private List<OAuth2TokenGranter> oAuth2TokenGranters;
+    /**
+     * The {@link WebResponseExceptionTranslator} instance
+     *
+     * @see org.minbox.framework.oauth.translator.DefaultWebResponseExceptionTranslator
+     */
+    @Autowired
+    private WebResponseExceptionTranslator webResponseExceptionTranslator;
 
     public AuthorizationServerConfiguration(ObjectProvider<List<OAuth2TokenGranter>> objectProvider) {
         this.oAuth2TokenGranters = objectProvider.getIfAvailable();
@@ -91,6 +99,7 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
         endpoints
                 .authenticationManager(authenticationManager)
                 .tokenStore(tokenStore)
+                .exceptionTranslator(webResponseExceptionTranslator)
                 // ApiBoot custom token granter
                 .tokenGranter(tokenGranter())
                 .accessTokenConverter(accessTokenConverter);

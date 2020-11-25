@@ -9,6 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.common.DefaultThrowableAnalyzer;
 import org.springframework.security.oauth2.common.exceptions.InsufficientScopeException;
 import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
+import org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator;
 import org.springframework.security.web.util.ThrowableAnalyzer;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 
@@ -21,13 +22,13 @@ import java.io.IOException;
  * @author 恒宇少年
  * @see org.springframework.security.oauth2.provider.error.DefaultWebResponseExceptionTranslator
  */
-public class WebResponseExceptionTranslator implements org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator {
+public class DefaultWebResponseExceptionTranslator implements WebResponseExceptionTranslator {
     /**
      * Response in case of authentication error
      */
     private AuthorizationDeniedResponse authorizationDeniedResponse;
 
-    public WebResponseExceptionTranslator(AuthorizationDeniedResponse authorizationDeniedResponse) {
+    public DefaultWebResponseExceptionTranslator(AuthorizationDeniedResponse authorizationDeniedResponse) {
         this.authorizationDeniedResponse = authorizationDeniedResponse;
     }
 

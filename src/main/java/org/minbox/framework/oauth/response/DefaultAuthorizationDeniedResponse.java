@@ -2,6 +2,7 @@ package org.minbox.framework.oauth.response;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import org.minbox.framework.oauth.exception.OAuth2Exception;
+import org.minbox.framework.oauth.translator.DefaultWebResponseExceptionTranslator;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.util.HtmlUtils;
 
@@ -10,7 +11,7 @@ import org.springframework.web.util.HtmlUtils;
  * Provide default OAuth2Exception exception response content
  *
  * @author 恒宇少年
- * @see org.minbox.framework.oauth.translator.WebResponseExceptionTranslator
+ * @see DefaultWebResponseExceptionTranslator
  * @see org.minbox.framework.oauth.exception.OAuth2Exception
  */
 public class DefaultAuthorizationDeniedResponse implements AuthorizationDeniedResponse {
