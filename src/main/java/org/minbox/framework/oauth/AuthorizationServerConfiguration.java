@@ -2,6 +2,7 @@ package org.minbox.framework.oauth;
 
 import org.minbox.framework.oauth.grant.OAuth2TokenGranter;
 import org.minbox.framework.oauth.grant.DefaultApiBootOauthTokenGranter;
+import org.minbox.framework.oauth.services.AlwaysCreateTokenServices;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -147,8 +148,14 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
         return null;
     }
 
-    private DefaultTokenServices tokenServices() {
-        DefaultTokenServices tokenServices = new DefaultTokenServices();
+    /**
+     * Get {@link AuthorizationServerTokenServices} instance
+     *
+     * @return {@link DefaultTokenServices} the default {@link AuthorizationServerTokenServices} child class
+     */
+    protected AuthorizationServerTokenServices tokenServices() {
+        //DefaultTokenServices tokenServices = new DefaultTokenServices();
+        AlwaysCreateTokenServices tokenServices = new AlwaysCreateTokenServices();
         tokenServices.setTokenStore(tokenStore);
         tokenServices.setSupportRefreshToken(true);
         tokenServices.setReuseRefreshToken(true);
