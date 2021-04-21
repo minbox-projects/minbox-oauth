@@ -50,30 +50,7 @@ public class AlwaysCreateTokenServices implements AuthorizationServerTokenServic
 
     @Transactional
     public OAuth2AccessToken createAccessToken(OAuth2Authentication authentication) throws AuthenticationException {
-        OAuth2AccessToken existingAccessToken = this.tokenStore.getAccessToken(authentication);
-        OAuth2RefreshToken refreshToken = null;
-        if (existingAccessToken != null) {
-            // Delete to determine whether the token has expired
-            // Comment time：2021.4.20
-            /*if (!existingAccessToken.isExpired()) {
-                this.tokenStore.storeAccessToken(existingAccessToken, authentication);
-                return existingAccessToken;
-            }
-            if (existingAccessToken.getRefreshToken() != null) {
-                refreshToken = existingAccessToken.getRefreshToken();
-                this.tokenStore.removeRefreshToken(refreshToken);
-            }
-            this.tokenStore.removeAccessToken(existingAccessToken);*/
-        }
-
-        if (refreshToken == null) {
-            refreshToken = this.createRefreshToken(authentication);
-        } else if (refreshToken instanceof ExpiringOAuth2RefreshToken) {
-            ExpiringOAuth2RefreshToken expiring = (ExpiringOAuth2RefreshToken) refreshToken;
-            if (System.currentTimeMillis() > expiring.getExpiration().getTime()) {
-                refreshToken = this.createRefreshToken(authentication);
-            }
-        }
+        OAuth2RefreshToken refreshToken = this.createRefreshToken(authentication);
 
         OAuth2AccessToken accessToken = this.createAccessToken(authentication, refreshToken);
         this.tokenStore.storeAccessToken(accessToken, authentication);
@@ -123,12 +100,19 @@ public class AlwaysCreateTokenServices implements AuthorizationServerTokenServic
                             refreshToken = this.createRefreshToken(authentication);
                         }
 
-                        OAuth2AccessToken accessToken = this.createAccessToken(authentication, refreshToken);
+                        DefaultOAuth2AccessToken accessToken = (DefaultOAuth2AccessToken) this.createAccessToken(authentication, refreshToken);
+                        // If you reuse the refresh token, set the refresh token to the new AccessToken
+                        if (this.reuseRefreshToken) {
+                            accessToken.setRefreshToken(refreshToken);
+                        }
                         this.tokenStore.storeAccessToken(accessToken, authentication);
                         if (!this.reuseRefreshToken) {
                             this.tokenStore.storeRefreshToken(accessToken.getRefreshToken(), authentication);
                         }
-
+                        // If refresh token is reused, no new token will be returned after refresh
+                        if (this.reuseRefreshToken) {
+                            accessToken.setRefreshToken(null);
+                        }
                         return accessToken;
                     }
                 } else {
