@@ -29,19 +29,20 @@ import java.util.Set;
  * @author 恒宇少年
  * @see org.minbox.framework.oauth.AuthorizationServerConfiguration
  */
-public class AlwaysCreateTokenServices implements AuthorizationServerTokenServices, ResourceServerTokenServices, ConsumerTokenServices, InitializingBean {
+public class MinBoxOAuth2TokenServices implements AuthorizationServerTokenServices, ResourceServerTokenServices, ConsumerTokenServices, InitializingBean {
     private static final BytesKeyGenerator DEFAULT_TOKEN_GENERATOR = KeyGenerators.secureRandom(20);
     private static final Charset US_ASCII = Charset.forName("US-ASCII");
     private int refreshTokenValiditySeconds = 2592000;
     private int accessTokenValiditySeconds = 43200;
     private boolean supportRefreshToken = false;
     private boolean reuseRefreshToken = true;
+    private boolean alwaysCreateToken = true;
     private TokenStore tokenStore;
     private ClientDetailsService clientDetailsService;
     private TokenEnhancer accessTokenEnhancer;
     private AuthenticationManager authenticationManager;
 
-    public AlwaysCreateTokenServices() {
+    public MinBoxOAuth2TokenServices() {
     }
 
     public void afterPropertiesSet() throws Exception {
@@ -50,8 +51,29 @@ public class AlwaysCreateTokenServices implements AuthorizationServerTokenServic
 
     @Transactional
     public OAuth2AccessToken createAccessToken(OAuth2Authentication authentication) throws AuthenticationException {
-        OAuth2RefreshToken refreshToken = this.createRefreshToken(authentication);
+        OAuth2RefreshToken refreshToken = null;
+        OAuth2AccessToken existingAccessToken = this.tokenStore.getAccessToken(authentication);
+        if (!this.alwaysCreateToken && existingAccessToken != null) {
+            if (!existingAccessToken.isExpired()) {
+                this.tokenStore.storeAccessToken(existingAccessToken, authentication);
+                return existingAccessToken;
+            }
 
+            if (existingAccessToken.getRefreshToken() != null) {
+                refreshToken = existingAccessToken.getRefreshToken();
+                this.tokenStore.removeRefreshToken(refreshToken);
+            }
+
+            this.tokenStore.removeAccessToken(existingAccessToken);
+        }
+        if (refreshToken == null) {
+            refreshToken = this.createRefreshToken(authentication);
+        } else if (refreshToken instanceof ExpiringOAuth2RefreshToken) {
+            ExpiringOAuth2RefreshToken expiring = (ExpiringOAuth2RefreshToken)refreshToken;
+            if (System.currentTimeMillis() > expiring.getExpiration().getTime()) {
+                refreshToken = this.createRefreshToken(authentication);
+            }
+        }
         OAuth2AccessToken accessToken = this.createAccessToken(authentication, refreshToken);
         this.tokenStore.storeAccessToken(accessToken, authentication);
         refreshToken = accessToken.getRefreshToken();
@@ -284,6 +306,10 @@ public class AlwaysCreateTokenServices implements AuthorizationServerTokenServic
 
     public void setReuseRefreshToken(boolean reuseRefreshToken) {
         this.reuseRefreshToken = reuseRefreshToken;
+    }
+
+    public void setAlwaysCreateToken(boolean alwaysCreateToken) {
+        this.alwaysCreateToken = alwaysCreateToken;
     }
 
     public void setTokenStore(TokenStore tokenStore) {

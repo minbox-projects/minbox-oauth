@@ -2,7 +2,7 @@ package org.minbox.framework.oauth;
 
 import org.minbox.framework.oauth.grant.OAuth2TokenGranter;
 import org.minbox.framework.oauth.grant.DefaultApiBootOauthTokenGranter;
-import org.minbox.framework.oauth.services.AlwaysCreateTokenServices;
+import org.minbox.framework.oauth.services.MinBoxOAuth2TokenServices;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -67,6 +67,11 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
      */
     @Autowired
     private WebResponseExceptionTranslator webResponseExceptionTranslator;
+    /**
+     * The OAuth2 config properties
+     */
+    @Autowired
+    private OAuthConfigProperties authConfigProperties;
 
     public AuthorizationServerConfiguration(ObjectProvider<List<OAuth2TokenGranter>> objectProvider) {
         this.oAuth2TokenGranters = objectProvider.getIfAvailable();
@@ -154,11 +159,13 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
      * @return {@link DefaultTokenServices} the default {@link AuthorizationServerTokenServices} child class
      */
     protected AuthorizationServerTokenServices tokenServices() {
-        //DefaultTokenServices tokenServices = new DefaultTokenServices();
-        AlwaysCreateTokenServices tokenServices = new AlwaysCreateTokenServices();
+        MinBoxOAuth2TokenServices tokenServices = new MinBoxOAuth2TokenServices();
         tokenServices.setTokenStore(tokenStore);
-        tokenServices.setSupportRefreshToken(true);
-        tokenServices.setReuseRefreshToken(true);
+        tokenServices.setSupportRefreshToken(authConfigProperties.isSupportRefreshToken());
+        tokenServices.setReuseRefreshToken(authConfigProperties.isReuseRefreshToken());
+        tokenServices.setAlwaysCreateToken(authConfigProperties.isAlwaysCreateToken());
+        tokenServices.setAccessTokenValiditySeconds(authConfigProperties.getAccessTokenValiditySeconds());
+        tokenServices.setRefreshTokenValiditySeconds(authConfigProperties.getRefreshTokenValiditySeconds());
         tokenServices.setClientDetailsService(clientDetailsService);
         tokenServices.setTokenEnhancer(tokenEnhancer());
         return tokenServices;
